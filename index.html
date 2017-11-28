@@ -1,0 +1,101 @@
+<html>
+<head>
+    <title></title>
+     <!-- Bootstrap core CSS     -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+</head>
+<body ng-app="homeApp" ng-controller="ctrl">
+    <!-- <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.6.0/Chart.bundle.min.js" type="text/javascript"></script> -->
+        <!-- <canvas id="dvCanvas" height="300" width="600"></canvas> -->
+        <div style="text-align: center;">
+        <ul style="text-align: left;">
+            <li ng-repeat="member in content">
+                {{$index + 1}}.  Name: {{member.name }} | ID: {{ member.id}}
+            </li>
+        </ul>
+        <button id="myselector" class="btn btn-primary" style="text-align: center;" ng-click="loadData(urls.fetchurl)">Show Chart</button>        
+        </div>
+        <canvas id="myChart" height="300" width="600"></canvas>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.6.0/Chart.bundle.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+
+<script type="text/javascript">
+    angular.module('homeApp', [])
+    .controller('ctrl', function($scope, $http) {
+        var vm = this;
+        vm.content = [];
+        vm.dataContent = [];
+        vm.dataContent.rank = [];
+        var color = ["#ff0000", "#FF8C00", "#FFCBA6","#5135b1","#FF8C00", "#FFCBA6","#64b5f6","#FEBD01", "#FF8C00","#5135b1"];
+        var interval;
+        var canvas = document.getElementById("myChart");
+        var ctx = canvas.getContext("2d");
+        $scope.urls = {
+            fetchurl: 'https://api.coinmarketcap.com/v1/ticker/?limit=10'//'http://localhost:8080/data/Living Room'
+        }; //add more elements as appropriate
+        $scope.loadData = function(url) { 
+            if (interval) { //check if interval is updating data periodically
+                clearInterval(interval);
+            }
+            $http({
+                method: 'GET',
+                url: url //use variable value based on parameter from button
+            }).then(successCallback, errorCallback);  
+        };
+        function successCallback(response) {
+            handleResponse(response);
+            var myNewChart = new Chart(ctx, getChartSettings());
+            interval = setInterval( function(){
+              angular.element(document.querySelector('#myselector')).triggerHandler('click');
+              $('#canvas').replaceWith('<canvas id="canvas"></canvas>');
+              var ctxChart = document.getElementById("canvas").getContext("2d");
+              window.myChart = new Chart(ctxChart).Line(newdata, options);
+            }, 5000);
+        }
+        function errorCallback(response) {
+            return alert(response.status)
+        }
+        function handleResponse(response) {
+            JSON.stringify(response.data);
+            $scope.content = response.data;
+            angular.forEach($scope.content, function (value) {
+              vm.dataContent.push(value.id);
+              vm.dataContent.rank.push(value.rank);
+            });
+            $scope.content = response.data;  
+        }
+        function getChartSettings() {
+            return {
+              type: "bar",
+              data: {
+                  labels: vm.dataContent,
+                  datasets: [{
+                    label: "Rank",
+                    data: vm.dataContent.rank,
+                    backgroundColor : color
+                  }]
+                },
+                options: {
+                    responsive: false
+                }
+            };  
+        }
+    });
+    function addData(chart, data, label) {
+        chart.data.labels.push(label);
+        chart.data.datasets.forEach(function (dataset) {
+            dataset.data.push(data);
+        });
+        chart.update();
+    }
+    function remove(chart) {
+        chart.data.labels.shift();
+        chart.data.datasets.forEach(function (dataset) {
+            dataset.data.shift();
+        });
+        chart.update();
+    }
+    </script>
+</body>
+</html>
